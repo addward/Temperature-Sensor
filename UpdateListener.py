@@ -11,7 +11,7 @@ class database(object):
         self._filepath = filepath
         self._dataset = dataset
         self._last_upd_time = time.ctime(os.path.getmtime(filepath))
-        
+
         self._listener_period = t_listen
         self._last_num_of_rows = 0
         self._callback_func = callback_func
@@ -44,7 +44,9 @@ class database(object):
             return _cursor.execute("SELECT {} FROM {}".format(list_of_variables, self._dataset))
         else:
             new_num_of_rows = _cursor.execute("SELECT count(1) from {}".format(self._dataset)).fetchall()[0][0]
+            update_size = new_num_of_rows - self._last_num_of_rows
+            self._last_num_of_rows = new_num_of_rows
             return _cursor.execute("""SELECT * FROM (
                 SELECT {}, rowid as rowid FROM {} ORDER BY rowid DESC LIMIT {})
-                ORDER BY rowid ASC;""".format(list_of_variables, self._dataset, new_num_of_rows - self._last_num_of_rows)
+                ORDER BY rowid ASC;""".format(list_of_variables, self._dataset, update_size)
             )
