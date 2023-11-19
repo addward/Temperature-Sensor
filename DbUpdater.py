@@ -2,6 +2,9 @@ import json
 import sqlite3
 import socket
 import time
+import os
+import sys
+
 from threading import Thread
 from secrets import db_port
 
@@ -89,6 +92,15 @@ class DbUpdater:
 if __name__ == '__main__':
     dbupdate = DbUpdater()
     dbupdate.start()
-    time.sleep(5*60)
-    dbupdate.end()
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        print("Terminating...")
+        dbupdate.end()
+        print("Terminated successfully.")
+        try:
+            sys.exit(130)
+        except SystemExit:
+            os._exit(130)
 
