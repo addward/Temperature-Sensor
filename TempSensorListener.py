@@ -4,7 +4,8 @@ import os
 import sys
 
 from threading import Thread
-from secrets import public_ip, public_port, db_port
+from secrets_local import public_ip, public_port, db_port
+from DbUpdater import readDB
 
 def sendDataToDb(data, ip, port):
     db_socket = socket.socket()  # instantiate
@@ -43,10 +44,28 @@ class TempSensorListener():
         server_socket.listen(2)
 
         while self.__runningfl:
+            n1_ds = readDB(dbname = "Plants.db", request = "select count(1) from waterplant where plantnum='1'")
+            n1 = 0
+            if n1_ds != None:
+                n1 = min(n1_ds[0][0], 9)
+            n2_ds = readDB(dbname = "Plants.db", request = "select count(1) from waterplant where plantnum='2'")
+            n2 = 0
+            if n2_ds != None:
+                n2 = min(n1_ds[0][0], 9)
+            n3_ds = readDB(dbname = "Plants.db", request = "select count(1) from waterplant where plantnum='3'")
+            n3 = 0
+            if n3_ds != None:
+                n3 = min(n1_ds[0][0], 9)
+
+            request = "{}{}{}".format(n1,n2,n3)
             try:
                 conn, address = server_socket.accept()  # accept new connection
                 data = conn.recv(1024).decode()
+                print("Send: {}".format(request))
+                conn.send(request.encode())
+                time.sleep(5)
                 conn.close()
+                readDB(dbname = "Plants.db", request = "delete from waterplant")
             except TimeoutError:
                 time.sleep(5)
                 continue
