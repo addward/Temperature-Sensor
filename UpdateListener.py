@@ -8,14 +8,11 @@ from concurrent.futures import ThreadPoolExecutor
 class database(object):
 
     def __init__(self, filepath, dataset, t_listen, callback_func) -> None:
-        self._filepath = filepath
-        self._dataset = dataset
-        self._last_upd_time = time.ctime(os.path.getmtime(filepath))
 
+        self.attachNewDb(filepath=filepath, dataset=dataset)
         self._listener_period = t_listen
-        self._last_num_of_rows = 0
+
         self._callback_func = callback_func
-        self._enable_listener = True
 
         self._upd_listener_thread_pool = ThreadPoolExecutor(max_workers=1)
 
@@ -23,14 +20,13 @@ class database(object):
             self._upd_listener_thread_pool.submit(self._update_listener)
 
     def _update_listener(self) -> int:
-        while (self._enable_listener):
-            tmp_time  = time.ctime(os.path.getmtime(self._filepath))
-            if (self._last_upd_time != tmp_time):
+        while True:
+            tmp_time = time.ctime(os.path.getmtime(self._filepath))
+            if (self._last_upd_time != tmp_time and self._enable_listener == True):
                 print("The file was updated: ", self._last_upd_time)
                 self._last_upd_time = tmp_time
                 self._callback_func()
             time.sleep(self._listener_period)
-        return 0
 
     def getCursor(self, list_of_variables) -> sqlite3.Cursor:
 
@@ -50,3 +46,14 @@ class database(object):
                 SELECT {}, rowid as rowid FROM {} ORDER BY rowid DESC LIMIT {})
                 ORDER BY rowid ASC;""".format(list_of_variables, self._dataset, update_size)
             )
+
+    def attachNewDb(self, filepath, dataset) -> None:
+        self._enable_listener = False
+
+        self._filepath = filepath
+        self._dataset = dataset
+        self._last_upd_time = -1
+        self._last_num_of_rows = 0
+
+        self._enable_listener = True
+
